@@ -1,0 +1,58 @@
+blueprint:
+  name: Z2m - Philips Hue Dimmer Switch
+  description: |
+    Control lights with a Philips Hue Dimmer Switch (only RWL020 (US) and RWL021 (EU), RWL022, the one that says 'hue' on the bottom, has a different button layout.)
+  domain: automation
+  source_url: https://github.com/mspearey/ha-blueprints/hue/dimmer/HueDimmer-Z2M.yaml
+
+  # Define the inputs for the blueprint
+  input:
+    remote:
+      name: Philips Hue Dimmer Switch
+      description: Pick either RWL020 (US) or RWL021 (EU)
+      selector:
+        entity:
+          integration: mqtt
+          #manufacturer: Philips
+
+# inputs for custom actions
+    button_on_short_press:
+      name: On button short press
+      description: Action to run on short on button press.
+      default: []
+      selector:
+        action:
+        
+    button_off_short_press:
+      name: Off button short press
+      description: Action to run on short off button press.
+      default: []
+      selector:
+        action:
+
+mode: restart
+max_exceeded: silent
+
+# Trigger the automation when the selected dimmer remote sends an event
+trigger:
+  - platform: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input remote
+    #attribute: action
+
+condition:
+  - condition: template
+    value_template: '{{ trigger.event.data.new_state.state not in ("", "None") }}'
+    
+action:
+  - variables:
+      command: '{{ trigger.event.data.new_state.state }}'
+      #command: '{{ trigger.to_state.attributes.action }}'
+
+  - choose:
+    - conditions: '{{ command == "on-press" }}'
+      sequence: !input button_on_short_press
+
+    - conditions: '{{ command == "off-press" }}'
+      sequence: !input button_off_short_press
